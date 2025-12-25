@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>新春心形祝福特效</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #000;
+            overflow: hidden;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            height: 100vh;
+            width: 100vw;
+        }
+        
+        /* 烟花画布（中间层） */
+        #fireworksCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+            display: none; /* 初始隐藏 */
+        }
+        
+        /* 提示窗口样式 - 修改为不消失 */
+        .tip-window {
+            position: absolute;
+            width: 120px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            opacity: 0;
+            animation: fadeInStay 8s forwards;
+            text-align: center;
+            padding: 8px;
+            font-weight: 500;
+            color: #333;
+            overflow: hidden;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        /* 新年快乐字样 - 改为炫彩颜色 */
+        .new-year-text {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+            pointer-events: none;
+            font-size: 15vw;
+            opacity: 0;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            font-weight: bold;
+            letter-spacing: 10px;
+            background: linear-gradient(45deg, 
+                #ff0000, #ff7700, #ffff00, #00ff00, 
+                #00ffff, #0000ff, #7700ff, #ff00ff, #ff0000);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+            text-shadow: 
+                0 0 20px rgba(255, 255, 255, 0.5),
+                0 0 40px rgba(255, 255, 255, 0.3);
+            animation: 
+                newYearFadeIn 8s ease-in-out forwards,
+                gradientShift 5s ease-in-out infinite;
+        }
+        
+        /* 开始交互遮罩层（文案+确定按钮分离） */
+        .start-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: #000;
+            z-index: 999;
+            display: flex;
+            flex-direction: column; /* 垂直排列：文案在上，按钮在下 */
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        /* 新春文案样式 */
+        .start-text {
+            font-size: 28px;
+            color: white;
+            margin-bottom: 40px; /* 文案与按钮间距 */
+            text-align: center;
+            letter-spacing: 3px;
+            text-shadow: 0 0 20px rgba(255, 0, 51, 0.7);
+            animation: textPulse 2s infinite alternate;
+        }
+        
+        /* 确定按钮样式（新春主题） */
+        .confirm-btn {
+            background: linear-gradient(45deg, #ffd700, #ff9900); /* 金色渐变，更显新春氛围 */
+            color: #d40000;
+            border: none;
+            padding: 18px 50px;
+            font-size: 22px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.5s;
+            font-family: "Microsoft YaHei", "微软雅黑", sans-serif;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            font-weight: bold;
+            border: 2px solid rgba(255, 255, 255, 0.8);
+            animation: btnPulse 2s infinite alternate;
+        }
+        
+        .confirm-btn:hover {
+            transform: scale(1.08);
+            box-shadow: 0 0 50px rgba(255, 215, 0, 0.8);
+            background: linear-gradient(45deg, #fffacd, #ffc107);
+        }
+        
+        /* 动画 - 修改为淡入后保持显示 */
+        @keyframes fadeInStay {
+            0% {
+                opacity: 0;
+                transform: scale(0.5) rotate(-5deg);
+            }
+            15% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            85% {
+                opacity: 1;
+                transform: scale(1) rotate(0deg);
+            }
+            100% {
+                opacity: 1; /* 修改为保持显示 */
+                transform: scale(1) rotate(0deg);
+            }
+        }
+        
+        /* 新年快乐字样淡入动画 */
+        @keyframes newYearFadeIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 0.8;
+                transform: scale(1);
+            }
+        }
+        
+        /* 炫彩渐变动画 */
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        
+        /* 文案呼吸动画 */
+        @keyframes textPulse {
+            0% {
+                opacity: 0.8;
+                text-shadow: 0 0 20px rgba(255, 0, 51, 0.7);
+            }
+            100% {
+                opacity: 1;
+                text-shadow: 0 0 30px rgba(255, 0, 51, 0.9), 0 0 15px rgba(255, 100, 100, 0.6);
+            }
+        }
+        
+        /* 按钮呼吸动画 */
+        @keyframes btnPulse {
+            0% {
+                opacity: 0.9;
+                box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+            }
+            100% {
+                opacity: 1;
+                box-shadow: 0 0 40px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 230, 0, 0.5);
+            }
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .tip-window {
+                width: 100px;
+                height: 50px;
+                font-size: 14px;
+            }
+            
+            .new-year-text {
+                font-size: 20vw;
+                letter-spacing: 5px;
+            }
+            
+            /* 响应式文案+按钮 */
+            .start-text {
+                font-size: 22px;
+                margin-bottom: 30px;
+            }
+            
+            .confirm-btn {
+                font-size: 18px;
+                padding: 15px 40px;
+                width: 80%;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .start-text {
+                font-size: 18px;
+                margin-bottom: 25px;
+                letter-spacing: 2px;
+            }
+            
+            .new-year-text {
+                font-size: 25vw;
+                letter-spacing: 3px;
+            }
+            
+            .confirm-btn {
+                font-size: 16px;
+                padding: 12px 30px;
+                width: 90%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 开始交互界面（文案+确定按钮） -->
+    <div class="start-mask" id="startMask">
+        <div class="start-text">🎁新年快乐，请查收属于您的新春祝福🎁</div>
+        <button class="confirm-btn" onclick="startBlessing()">确定</button>
+    </div>
+    
+    <!-- 烟花画布 -->
+    <canvas id="fireworksCanvas"></canvas>
+    
+    <!-- 在这里添加背景音乐 -->
+    <audio id="backgroundMusic" loop preload="auto">
+        <source src="regret.mp3" type="audio/mpeg">
+        您的浏览器不支持音频元素。
+    </audio>
+    
+    <script>
+        // ========== 烟花效果（保持增强版） ==========
+        class Fireworks {
+            constructor() {
+                this.canvas = document.getElementById('fireworksCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.particles = [];
+                this.fireworks = [];
+                this.resize();
+                window.addEventListener('resize', () => this.resize());
+                this.animate();
+                this.createFireworks();
+            }
+            
+            resize() {
+                this.canvas.width = window.innerWidth;
+                this.canvas.height = window.innerHeight;
+            }
+            
+            createFireworks() {
+                for (let i = 0; i < 5; i++) {
+                    setTimeout(() => this.createFirework(), i * 300);
+                }
+                setInterval(() => {
+                    if (this.fireworks.length < 8) {
+                        this.createFirework();
+                    }
+                }, 1500);
+            }
+            
+            createFirework() {
+                const x = Math.random() * this.canvas.width;
+                const y = this.canvas.height;
+                const targetY = Math.random() * this.canvas.height * 0.4;
+                const speed = 3 + Math.random() * 2.5;
+                const color = `hsl(${Math.random() * 80 + 280}, 100%, 60%)`;
+                
+                this.fireworks.push({
+                    x, y, targetY,
+                    speed, color,
+                    size: 2.5,
+                    trail: []
+                });
+            }
+            
+            createParticles(x, y, color) {
+                const particleCount = 100 + Math.random() * 60;
+                for (let i = 0; i < particleCount; i++) {
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 2.5 + Math.random() * 3.5;
+                    const velocity = {
+                        x: Math.cos(angle) * speed,
+                        y: Math.sin(angle) * speed
+                    };
+                    
+                    this.particles.push({
+                        x, y,
+                        velocity,
+                        color,
+                        size: 1.5 + Math.random() * 2.5,
+                        life: 120 + Math.random() * 60,
+                        decay: 0.94 + Math.random() * 0.05
+                    });
+                }
+            }
+            
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.09)';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                
+                for (let i = this.fireworks.length - 1; i >= 0; i--) {
+                    const firework = this.fireworks[i];
+                    firework.trail.push({x: firework.x, y: firework.y});
+                    if (firework.trail.length > 15) {
+                        firework.trail.shift();
+                    }
+                    
+                    for (let j = 0; j < firework.trail.length; j++) {
+                        const point = firework.trail[j];
+                        const alpha = j / firework.trail.length;
+                        this.ctx.beginPath();
+                        this.ctx.arc(point.x, point.y, firework.size * alpha * 1.2, 0, Math.PI * 2);
+                        this.ctx.fillStyle = `rgba(${this.hexToRgb(firework.color)}, ${alpha * 0.7})`;
+                        this.ctx.fill();
+                    }
+                    
+                    firework.y -= firework.speed;
+                    firework.x += Math.sin(Date.now() * 0.0015) * 0.7;
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(firework.x, firework.y, firework.size, 0, Math.PI * 2);
+                    this.ctx.fillStyle = firework.color;
+                    this.ctx.fill();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(firework.x, firework.y, firework.size * 4, 0, Math.PI * 2);
+                    const gradient = this.ctx.createRadialGradient(
+                        firework.x, firework.y, 0,
+                        firework.x, firework.y, firework.size * 4
+                    );
+                    gradient.addColorStop(0, firework.color.replace(')', ', 0.4)').replace('hsl', 'hsla'));
+                    gradient.addColorStop(1, firework.color.replace(')', ', 0)').replace('hsl', 'hsla'));
+                    this.ctx.fillStyle = gradient;
+                    this.ctx.fill();
+                    
+                    if (firework.y <= firework.targetY) {
+                        this.createParticles(firework.x, firework.y, firework.color);
+                        this.fireworks.splice(i, 1);
+                    }
+                }
+                
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const particle = this.particles[i];
+                    particle.x += particle.velocity.x;
+                    particle.y += particle.velocity.y;
+                    particle.velocity.y += 0.04;
+                    particle.life *= particle.decay;
+                    
+                    if (particle.life <= 1) {
+                        this.particles.splice(i, 1);
+                        continue;
+                    }
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    this.ctx.fillStyle = `rgba(${this.hexToRgb(particle.color)}, ${particle.life / 100 * 0.8})`;
+                    this.ctx.fill();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(particle.x, particle.y);
+                    this.ctx.lineTo(
+                        particle.x - particle.velocity.x * 0.8,
+                        particle.y - particle.velocity.y * 0.8
+                    );
+                    this.ctx.strokeStyle = `rgba(${this.hexToRgb(particle.color)}, ${particle.life / 200 * 0.6})`;
+                    this.ctx.lineWidth = particle.size * 1.2;
+                    this.ctx.stroke();
+                }
+            }
+            
+            hexToRgb(hex) {
+                if (hex.startsWith('hsl')) {
+                    const match = hex.match(/(\d+),\s*(\d+)%,\s*(\d+)%/);
+                    if (match) {
+                        const h = parseInt(match[1]);
+                        const s = parseInt(match[2]);
+                        const l = parseInt(match[3]);
+                        return this.hslToRgb(h, s, l);
+                    }
+                }
+                return '255, 255, 255';
+            }
+            
+            hslToRgb(h, s, l) {
+                s /= 100;
+                l /= 100;
+                const k = n => (n + h / 30) % 12;
+                const a = s * Math.min(l, 1 - l);
+                const f = n => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+                const r = Math.round(255 * f(0));
+                const g = Math.round(255 * f(8));
+                const b = Math.round(255 * f(4));
+                return `${r}, ${g}, ${b}`;
+            }
+        }
+        
+        // ========== 核心逻辑 ==========
+        const CONFIG = {
+            points: 50,
+            windowWidth: 120,
+            windowHeight: 60,
+            pointDelay: 90,
+            tipDisplayTime: 8000
+        };
+        
+        const TIPS = [
+            "龙年大吉，万事顺意",
+            "新春快乐，阖家幸福",
+            "身体健康，平安喜乐",
+            "财源广进，富贵吉祥",
+            "笑口常开，好运连连",
+            "心想事成，美梦成真",
+            "年年有余，岁岁无忧",
+            "福气满满，喜气洋洋",
+            "龙马精神，步步高升",
+            "平安喜乐，四季安康",
+            "新春大吉，诸事顺遂",
+            "好运常在，喜事临门",
+            "新春愉快，幸福常伴"
+        ];
+        
+        let fireworks;
+        let allTipWindows = []; // 存储所有爱心提示窗口
+        
+        function generateHeartPoints(numPoints) {
+            const points = [];
+            const centerX = window.innerWidth / 2;
+            const centerY = window.innerHeight / 2;
+            const scale = Math.min(window.innerWidth / 40, window.innerHeight / 40);
+            
+            for (let i = 0; i < numPoints; i++) {
+                const t = i / numPoints * 2 * Math.PI;
+                const x = 16 * Math.pow(Math.sin(t), 3);
+                const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+                const adjustedY = -y;
+                let pointX = centerX + x * scale;
+                let pointY = centerY + adjustedY * scale;
+                
+                pointX = Math.max(CONFIG.windowWidth / 2, Math.min(pointX, window.innerWidth - CONFIG.windowWidth / 2));
+                pointY = Math.max(CONFIG.windowHeight / 2, Math.min(pointY, window.innerHeight - CONFIG.windowHeight / 2));
+                
+                points.push({x: Math.round(pointX), y: Math.round(pointY)});
+            }
+            
+            return points;
+        }
+        
+        function getRandomColor() {
+            const r = Math.floor(Math.random() * 56) + 200;
+            const g = Math.floor(Math.random() * 56) + 200;
+            const b = Math.floor(Math.random() * 56) + 200;
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        
+        function showTipWindow(x, y) {
+            const tipWindow = document.createElement('div');
+            tipWindow.className = 'tip-window';
+            tipWindow.style.left = `${x - CONFIG.windowWidth / 2}px`;
+            tipWindow.style.top = `${y - CONFIG.windowHeight / 2}px`;
+            const bgColor = getRandomColor();
+            tipWindow.style.backgroundColor = bgColor;
+            const randomTip = TIPS[Math.floor(Math.random() * TIPS.length)];
+            tipWindow.textContent = randomTip;
+            document.body.appendChild(tipWindow);
+            tipWindow.style.animationDuration = `${CONFIG.tipDisplayTime / 1000}s`;
+            
+            // 不再自动移除爱心窗口
+            allTipWindows.push(tipWindow);
+            return tipWindow;
+        }
+        
+        function showNewYearText() {
+            const newYearElement = document.createElement('div');
+            newYearElement.className = 'new-year-text';
+            newYearElement.textContent = '新年快乐';
+            document.body.appendChild(newYearElement);
+            
+            // 25秒后淡出并移除
+            setTimeout(() => {
+                newYearElement.style.opacity = '0';
+                newYearElement.style.transition = 'opacity 3s ease-out';
+                setTimeout(() => {
+                    if (newYearElement.parentNode) {
+                        newYearElement.parentNode.removeChild(newYearElement);
+                    }
+                }, 3000);
+            }, 22000); // 22秒后开始淡出
+        }
+        
+        function startHeartAnimation() {
+            const points = generateHeartPoints(CONFIG.points);
+            
+            // 清空之前的窗口
+            allTipWindows = [];
+            
+            // 依次显示所有心形提示（不会消失）
+            points.forEach((point, index) => {
+                setTimeout(() => {
+                    showTipWindow(point.x, point.y);
+                }, index * CONFIG.pointDelay);
+            });
+            
+            // 在爱心显示结束后等待3秒，然后显示新年快乐字样
+            // 计算最后一个爱心显示的时间 + 3秒等待
+            setTimeout(showNewYearText, (CONFIG.points * CONFIG.pointDelay) + 3000);
+        }
+        
+        // 点击确定按钮，启动特效
+        function startBlessing() {
+            // 隐藏开始遮罩层
+            const startMask = document.getElementById('startMask');
+            startMask.style.display = 'none';
+            
+            // 播放背景音乐
+            const bgMusic = document.getElementById('backgroundMusic');
+            bgMusic.volume = 0.5; // 设置音量大小（0-1之间，0.5表示50%音量）
+            bgMusic.play();
+            
+            // 显示烟花画布
+            document.getElementById('fireworksCanvas').style.display = 'block';
+            // 初始化烟花和启动心形动画
+            fireworks = new Fireworks();
+            setTimeout(startHeartAnimation, 500);
+        }
+        
+        // 页面加载后仅显示开始界面，不自动启动
+        document.addEventListener('DOMContentLoaded', () => {});
+        
+        // 移除点击跳过弹窗的逻辑，点击屏幕无任何弹窗
+        document.addEventListener('click', (e) => {
+            const startMask = document.getElementById('startMask');
+            if (startMask.style.display === 'none') {
+                // 仅保留点击穿透，无其他操作
+            }
+        });
+    </script>
+</body>
+</html>
